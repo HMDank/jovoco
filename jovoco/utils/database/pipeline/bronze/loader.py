@@ -13,8 +13,10 @@ logger = logging.getLogger(__name__)
 
 
 def normalize_column_names(name: str) -> str:
-    """Standardizes identifiers: 'Registration Date' -> 'registration_date'."""
-    return re.sub(r"[\s\-]+", "_", name.strip()).lower()
+    """Handles 'CustomerID' -> 'customer_id' and 'Registration Date' -> 'registration_date'."""
+    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name.replace(" ", ""))
+    s2 = re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1)
+    return re.sub(r"[\s\-]+", "_", s2).lower()
 
 
 class BronzeLoader:
