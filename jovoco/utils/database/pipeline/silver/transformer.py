@@ -94,11 +94,15 @@ class SilverTransformer:
         filtered_df = df[
             [column for column in df.columns if column in valid_attributes]
         ]
-        records_to_insert = cast(List[Dict[str, Any]], filtered_df.to_dict("records"))
+        raw_records = cast(List[Dict[str, Any]], filtered_df.to_dict("records"))
+        clean_records = [
+            {key: (None if pd.isna(value) else value) for key, value in record.items()}
+            for record in raw_records
+        ]
 
-        session.bulk_insert_mappings(inspection_result.mapper, records_to_insert)
+        session.bulk_insert_mappings(inspection_result.mapper, clean_records)
         session.flush()
-        logger.info(f"Loaded {len(records_to_insert)} records into {model.__name__}.")
+        logger.info(f"Loaded {len(clean_records)} records into {model.__name__}.")
 
     def _transform_products(self, session: Session) -> None:
         products_df = self._get_df(session, StgProduct)
