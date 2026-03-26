@@ -1,12 +1,10 @@
 """SQLAlchemy ORM models for the bronze (stg) staging layer.
 
 Raw data is persisted exactly as received from source CSVs.
-All columns are stored as strings to preserve original values.
+Naming follows normalized CSV headers (lowercase, underscores instead of spaces).
 """
 
-import uuid
 from datetime import datetime, timezone
-
 from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -20,11 +18,11 @@ class StgCustomer(BronzeBase):
     __table_args__ = {"schema": "stg"}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    customer_id: Mapped[str | None] = mapped_column(String(50))
+    customer: Mapped[str | None] = mapped_column(String(50))  # From 'CustomerID'
     name: Mapped[str | None] = mapped_column(String(100))
     city: Mapped[str | None] = mapped_column(String(80))
     registration_date: Mapped[str | None] = mapped_column(String(30))
-    customer_type: Mapped[str | None] = mapped_column(String(30))
+    type: Mapped[str | None] = mapped_column(String(30))  # From 'Type'
     loaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -35,10 +33,10 @@ class StgOrder(BronzeBase):
     __table_args__ = {"schema": "stg"}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    order_id: Mapped[str | None] = mapped_column(String(50))
+    order: Mapped[str | None] = mapped_column(String(50))  # From 'Order'
     customer_name: Mapped[str | None] = mapped_column(String(100))
-    store_id: Mapped[str | None] = mapped_column(String(50))
-    order_date: Mapped[str | None] = mapped_column(String(30))
+    store: Mapped[str | None] = mapped_column(String(50))  # From 'Store'
+    date: Mapped[str | None] = mapped_column(String(30))  # From 'Date'
     status: Mapped[str | None] = mapped_column(String(30))
     loaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
@@ -50,11 +48,11 @@ class StgOrderItem(BronzeBase):
     __table_args__ = {"schema": "stg"}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    item_id: Mapped[str | None] = mapped_column(String(50))
-    order_id: Mapped[str | None] = mapped_column(String(50))
-    product_title: Mapped[str | None] = mapped_column(String(100))
-    quantity: Mapped[str | None] = mapped_column(String(20))
-    unit_price: Mapped[str | None] = mapped_column(String(20))
+    item: Mapped[str | None] = mapped_column(String(50))  # From 'Item'
+    order: Mapped[str | None] = mapped_column(String(50))  # From 'Order'
+    product: Mapped[str | None] = mapped_column(String(100))  # From 'Product'
+    qty: Mapped[str | None] = mapped_column(String(20))  # From 'Qty'
+    price: Mapped[str | None] = mapped_column(String(20))  # From 'Price'
     loaded_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
     )
@@ -65,7 +63,7 @@ class StgProduct(BronzeBase):
     __table_args__ = {"schema": "stg"}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    product_id: Mapped[str | None] = mapped_column(String(50))
+    product: Mapped[str | None] = mapped_column(String(50))  # From 'Product'
     title: Mapped[str | None] = mapped_column(String(100))
     category: Mapped[str | None] = mapped_column(String(50))
     cost: Mapped[str | None] = mapped_column(String(20))
@@ -79,7 +77,7 @@ class StgStore(BronzeBase):
     __table_args__ = {"schema": "stg"}
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    store_id: Mapped[str | None] = mapped_column(String(50))
+    store: Mapped[str | None] = mapped_column(String(50))  # From 'Store'
     title: Mapped[str | None] = mapped_column(String(100))
     city: Mapped[str | None] = mapped_column(String(80))
     region: Mapped[str | None] = mapped_column(String(50))

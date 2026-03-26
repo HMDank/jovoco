@@ -13,13 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 def normalize_column_names(name: str) -> str:
-    """Converts 'Registration Date' or 'RegistrationDate' to 'registration_date'."""
-    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name.replace(" ", ""))
-    return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+    """Standardizes identifiers: 'Registration Date' -> 'registration_date'."""
+    return re.sub(r"[\s\-]+", "_", name.strip()).lower()
 
 
 class BronzeLoader:
-    """Loads raw CSV data into the stg schema using dynamic regex mapping."""
+    """Loads raw CSV data into staging with minimal name normalization."""
 
     def __init__(self, csv_dir: Path) -> None:
         self.csv_dir = csv_dir
@@ -28,6 +27,7 @@ class BronzeLoader:
         logger.info("Starting dynamic bronze load...")
 
         for model in BronzeBase.__subclasses__():
+            # Matches tablename to filename (e.g., customers -> customers.csv)
             filename = f"{model.__tablename__}.csv"
             self._process_table(session, model, filename)
 
@@ -39,23 +39,26 @@ class BronzeLoader:
     ) -> None:
         path = self.csv_dir / filename
         if not path.exists():
-            logger.warning(f"File not found, skipping: {filename}")
+            logger.warning(f"File not found: {filename}")
             return
 
         session.execute(delete(model))
 
+        # Load as raw strings
         df = pd.read_csv(path, dtype=str).fillna("")
 
-        csv_to_model_map = {col: normalize_column_names(col) for col in df.columns}
+        # Get valid model attributes
         valid_columns = model.__table__.columns.keys()
 
         records = []
         for _, row in df.iterrows():
             params = {}
-            for csv_col, normalized in csv_to_model_map.items():
-                if normalized in valid_columns:
+            for csv_col in df.columns:
+                norm_name = normalize_column_names(csv_col)
+
+                if norm_name in valid_columns:
                     val = row[csv_col]
-                    params[normalized] = val if val != "" else None
+                    params[norm_name] = val if val != "" else None
 
             if params:
                 records.append(model(**params))
